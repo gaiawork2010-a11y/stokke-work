@@ -1,4 +1,8 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>워크샵 팀 대항전</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +51,7 @@ input:disabled,select:disabled{background:var(--sunken);color:var(--muted)}
 .top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
 .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:600}
 .top h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,5vw,42px);line-height:1.1}
-.sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 10px;background:var(--surface)}
+.sync{cursor:pointer;font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 10px;background:var(--surface)}
 .sync i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .sync.live i{background:var(--ok)} .sync.local i{background:var(--warn)}
 
@@ -360,6 +364,14 @@ textarea{font:inherit;font-family:var(--mono);font-size:13px;color:var(--ink);ba
 @media (max-width:560px){.stages{grid-template-columns:1fr}.row{grid-template-columns:32px minmax(0,1fr) auto}.row .pill{grid-column:2/4;justify-self:start}.pts{grid-template-columns:repeat(3,minmax(0,1fr))}.tv{padding:16px}.tv-btn{min-width:0;flex:1 1 30%;padding:12px 10px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.tv.l1{box-shadow:inset 0 0 0 6px var(--tv-red)}}
 </style>
+<style>body{margin:0}</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+
 
 <div class="wrap">
   <div id="app"></div>
@@ -426,7 +438,9 @@ let state = { config:{}, teams:{}, runs:{}, scores:{}, marks:{}, quiz:null, mark
 let db = null, mode = 'loading', readOnly = false;
 let ui = { tab:'overview', prog:'p1', p1view:'bracket', q:1 };
 try { Object.assign(ui, JSON.parse(localStorage.getItem(LS_KEY+':ui') || '{}')); } catch(e){}
-try { const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (s) state = Object.assign(state, s); ['marks5','p4teams','p4scores','p3teams','p3scores'].forEach(k => { if (!state[k]) state[k] = {}; }); } catch(e){}
+const EMBED = {"config": {"date": "", "maxFix": 240, "mode": "penalty", "mqN": 10, "mqPts": 10, "mqSec": 30, "p1pts": [100, 70, 50, 30, 30, 30], "p3max": 30, "p3pts": [100, 100, 50, 50, 30, 30], "p4max": 20, "p4pts": [100, 100, 50, 50, 30, 30], "p4sec": 300, "pnames": {}, "program": "유모차 분해·조립 대회", "quizN": 20, "quizPts": 10, "quizSec": 60, "title": "2026 스토케 워크샵", "unit": 60}, "teams": {"t1": {"group": "A", "leader": 0, "members": [{"name": "박은희", "rank": "매니저", "store": "신세계 대전"}, {"name": "오상화", "rank": "매니저", "store": "현대 킨텍스"}, {"name": "권승아", "rank": "매니저", "store": "현대 판교"}, {"name": "김경숙", "rank": "시니어", "store": "롯데 인천"}, {"name": "심주영", "rank": "주니어", "store": "롯데 수원"}], "name": "박은희팀"}, "t2": {"group": "A", "leader": 0, "members": [{"name": "김윤희", "rank": "매니저", "store": "신세계 천안아산"}, {"name": "주효진", "rank": "매니저", "store": "롯데 평촌"}, {"name": "권경혜", "rank": "매니저", "store": "롯데 창원"}, {"name": "이선희", "rank": "시니어", "store": "롯데 부산"}], "name": "김윤희팀"}, "t3": {"group": "A", "leader": 0, "members": [{"name": "윤주은", "rank": "매니저", "store": "신세계 본점"}, {"name": "채하나", "rank": "매니저", "store": "롯데 전주"}, {"name": "박진영", "rank": "매니저", "store": "롯데 울산"}, {"name": "김은희", "rank": "시니어", "store": "롯데 동탄"}, {"name": "이소율", "rank": "시니어", "store": "신세계 천안아산"}], "name": "윤주은팀"}, "t4": {"group": "B", "leader": 0, "members": [{"name": "허혜정", "rank": "매니저", "store": "롯데 부산"}, {"name": "홍현주", "rank": "매니저", "store": "롯데 잠실"}, {"name": "민보경", "rank": "매니저", "store": "현대 대구"}, {"name": "최유미", "rank": "시니어", "store": "롯데 평촌"}], "name": "허혜정팀"}, "t5": {"group": "B", "leader": 0, "members": [{"name": "정예원", "rank": "매니저", "store": "롯데 동탄"}, {"name": "최은심", "rank": "매니저", "store": "롯데 김포"}, {"name": "김희선", "rank": "매니저", "store": "롯데 청량리"}, {"name": "이지용", "rank": "시니어", "store": "현대 판교"}, {"name": "박지후", "rank": "주니어", "store": "갤러리아 타임월드"}], "name": "정예원팀"}, "t6": {"group": "B", "leader": 0, "members": [{"name": "심재익", "rank": "매니저", "store": "롯데 인천"}, {"name": "남현정", "rank": "매니저", "store": "롯데 수원"}, {"name": "이나진", "rank": "매니저", "store": "갤러리아 타임월드"}, {"name": "윤나윤", "rank": "시니어", "store": "롯데 잠실"}, {"name": "최희정", "rank": "시니어", "store": "롯데 전주"}], "name": "심재익팀"}}, "runs": {"F-t1": {"dq": false, "note": "", "pen": 2, "players": ["3", "4", "5", "2"], "time": 2}, "F-t3": {"dq": false, "note": "", "pen": 2, "players": ["12", "15", "13", "14"], "time": 3.2}, "F-t4": {"dq": false, "note": "", "pen": 1, "players": ["17", "18", "19", "16"], "time": 4.4}, "Q-t1": {"dq": false, "note": "", "pen": 0, "players": [], "time": null}, "Q-t2": {"dq": false, "note": "", "pen": 0, "players": [], "time": 0}, "Q-t3": {"dq": false, "note": "", "pen": 0, "players": [], "time": null}, "Q-t4": {"dq": false, "note": "", "pen": 0, "players": [], "time": null}, "Q-t5": {"dq": false, "note": "", "pen": 0, "players": [], "time": null}, "Q-t6": {"dq": false, "note": "", "pen": 0, "players": [], "time": null}}, "scores": {}, "marks": {"t1": {}, "t2": {}, "t3": {}, "t4": {}, "t5": {}, "t6": {}}, "quiz": {"items": [{"a": "", "bonus": false, "id": "q1", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q2", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q3", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q4", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q5", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q6", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q7", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q8", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q9", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q10", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q11", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q12", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q13", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q14", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q15", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q16", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q17", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q18", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q19", "pts": 10, "q": "", "used": false}, {"a": "", "bonus": false, "id": "q20", "pts": 10, "q": "", "used": false}]}, "marks5": {"t1": {}, "t2": {}, "t3": {}, "t4": {}, "t5": {}, "t6": {}}, "quiz5": null, "p4meta": {"evaluators": [{"id": "e1", "name": "지사장님"}, {"id": "e2", "name": "김용진 차장님"}, {"id": "e3", "name": "나원석 대표님"}, {"id": "e4", "name": "김성환  차장님"}]}, "p4teams": {"t1": {"order": 1, "presenter": "박은희", "time": null, "title": "캐노피의 장점"}, "t2": {"order": 2, "presenter": "김윤희", "time": null, "title": "레그레스트와 발판의 장점"}, "t3": {"order": 3, "presenter": "12", "time": null, "title": "통풍의 장점"}, "t4": {"order": 4, "presenter": "18", "time": 0.5, "title": "서스펜션과  핸들링의 장점"}, "t5": {"order": 5, "presenter": "22", "time": null, "title": "폴딩 언폴딩의 장점"}, "t6": {"order": 6, "presenter": "27", "time": 2, "title": "다양한 활용도의 장점"}}, "p4scores": {"e1": {"t1": 17, "t2": 20, "t3": 7, "t4": 15, "t5": 8, "t6": 9}, "e2": {"t1": 15, "t2": 15, "t3": 20, "t4": 20, "t5": 20, "t6": 7}, "e3": {"t1": 16, "t2": 18, "t3": 15, "t4": 16, "t5": 15, "t6": 8}, "e4": {"t1": 15, "t2": 20, "t3": 20, "t4": 14, "t5": 20, "t6": 15}}, "p3meta": null, "p3teams": {"t1": {"customer": "", "order": 1, "presenter": "권승아", "time": null, "title": "상품 정보 오안내 건(커넥트 없는데 출시 계획 없다고 이야기 안함)"}, "t2": {"customer": "", "order": 2, "presenter": "주효진", "time": null, "title": "배송 지연 건(1주일 뒤에 배송된다고 했는데 2달 동안 배송 일정 답변 못 받음)"}, "t3": {"customer": "", "order": 3, "presenter": "김은희", "time": null, "title": "고객 정보 오기입으로 인한 오배송 건(뜬금 없는 지역으로 상품이 배송 됨)"}, "t4": {"customer": "", "order": 4, "presenter": "민보경", "time": null, "title": "직원 불친절 응대 건"}, "t5": {"customer": "", "order": 5, "presenter": "김희선", "time": null, "title": "정상 판정 미수긍으로 인한 교환 요청 건(불량이 아님에도 마음에 들지 않는다고 무작정 교환 요청)"}, "t6": {"customer": "", "order": 6, "presenter": "남현정", "time": null, "title": "발주 누락 건"}}, "p3scores": {"e1": {}}};
+state = Object.assign(state, JSON.parse(JSON.stringify(EMBED)));
+try { const s = JSON.parse(localStorage.getItem(LS_KEY+':web') || 'null'); if (s) state = Object.assign(state, s); ['marks5','p4teams','p4scores','p3teams','p3scores'].forEach(k => { if (!state[k]) state[k] = {}; }); } catch(e){}
 const saveUi = () => { try { localStorage.setItem(LS_KEY+':ui', JSON.stringify(ui)); } catch(e){} };
 
 /* ---------- helpers ---------- */
@@ -592,7 +606,7 @@ function standings(){
 
 /* ---------- persistence ---------- */
 const queues = {};
-function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
+function saveLocal(){ try { localStorage.setItem(LS_KEY+':web', JSON.stringify(state)); } catch(e){} }
 function persist(path, obj){
   saveLocal();
   if (!db) return;
@@ -624,7 +638,7 @@ function render(){
   const selS = inApp ? ae.selectionStart : null, selE = inApp ? ae.selectionEnd : null;
   const c = cfg(), dis = readOnly ? 'disabled' : '';
   const syncCls = mode === 'live' ? 'live' : mode === 'local' ? 'local' : '';
-  const syncTxt = mode === 'live' ? (readOnly ? '공유 데이터 · 보기 전용' : '공유 저장 · 실시간 반영') : mode === 'local' ? '이 브라우저에만 저장' : '연결 중…';
+  const syncTxt = mode === 'live' ? (readOnly ? '공유 데이터 · 보기 전용' : '공유 저장 · 실시간 반영') : mode === 'local' ? (connInfo ? '이 브라우저에만 저장 · 연결 확인 필요' : '이 브라우저에만 저장') : '연결 중…';
   const TABS = [['overview','종합 현황'],['teams','조 편성'],['timer','타이머'],['programs','프로그램'],['settings','설정']];
   let html = `
   <header class="top">
@@ -632,7 +646,7 @@ function render(){
       <span class="eyebrow">팀 대항전 · ${PROGRAMS.length}개 프로그램${c.date ? ' · '+esc(c.date) : ''}</span>
       <h1>${esc(c.title)}</h1>
     </div>
-    <span class="sync ${syncCls}"><i></i>${syncTxt}</span>
+    <button class="sync ${syncCls}" data-tab="settings" data-goconn="1" title="${esc(connInfo)}"><i></i>${syncTxt}</button>
   </header>
   <nav class="tabs" role="tablist">${TABS.map(([k,l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${ui.tab===k}">${l}</button>`).join('')}</nav>`;
   if (ui.tab === 'overview') html += overviewView(c);
@@ -724,7 +738,7 @@ function manualView(p, c, dis){
 const QT = { left:null, running:false, end:0, beeped:false, sec:60, pid:null };
 const qtLeft = () => QT.running ? Math.max(0, QT.end - nowS()) : (QT.left ?? QT.sec);
 function qtSync(pid){ if (QT.pid !== pid) { QT.pid = pid; QT.running = false; QT.left = null; QT.beeped = false; } QT.sec = qcfg(pid).sec; }
-let qResetArm = null, qDelArm = null, qImportArm = false, qImportText = '', qImportPid = null;
+let reseedArm = false, connInfo = '', qResetArm = null, qDelArm = null, qImportArm = false, qImportText = '', qImportPid = null;
 const qView = pid => (ui.qview || {})[pid] || 'live';
 function quizView(pid, c, dis){
   qtSync(pid);
@@ -1089,6 +1103,15 @@ function settingsView(c, dis){
     <div class="fld"><label for="cf-date">일시 · 장소</label><input id="cf-date" data-bind="cfg" data-f="date" value="${esc(c.date)}" placeholder="예: 11월 14일(토) 14:00 · 대강당" ${dis}></div>
     <div class="fld"><span class="lb">프로그램 이름</span>${PROGRAMS.map((p,i) => `<input id="pn-${p.id}" data-bind="pname" data-id="${p.id}" value="${esc(pname(p.id))}" aria-label="${i+1}번 프로그램 이름" ${dis}>`).join('')}</div>
   </div></section>
+  <section class="card" id="connSettings"><div class="card-h"><h2>공유 저장소 연결</h2><span class="pill ${mode==='live'?'ok':'warn'}">${mode==='live' ? '연결됨 · 실시간 공유' : '연결 안 됨 · 이 브라우저에만 저장'}</span></div>
+    ${mode==='live' ? `<p class="note">Firebase 프로젝트 <b>${esc((window.FIREBASE_CONFIG||{}).projectId||'')}</b>에 저장되고 있습니다. 여러 기기에서 입력한 내용이 바로 공유됩니다.</p>
+      <div class="btns"><button class="btn danger sm" data-act="reseed">${reseedArm ? '한 번 더 누르면 공유 데이터를 파일 데이터로 덮어씁니다' : '파일에 담긴 데이터로 다시 올리기'}</button>${reseedArm ? '<button class="btn sm" data-act="reseedcancel">취소</button>' : ''}</div>`
+    : `<p class="note" style="color:var(--bad)"><b>원인:</b> ${esc(connInfo || '확인 중입니다.')}</p>
+      <ol class="rules"><li>저장소에 <code>firebase-config.js</code>가 <code>index.html</code>과 같은 폴더에 있고, Firebase 값(apiKey, projectId 등)이 채워져 있는지</li>
+      <li>Firebase › Authentication › 로그인 방법에서 <b>익명</b>이 사용 설정되어 있는지</li>
+      <li>Firebase › Firestore Database가 만들어져 있고, 규칙에 <code>firestore.rules</code> 내용을 게시했는지</li>
+      <li>값을 고친 뒤 GitHub에 커밋 → Netlify 재배포가 끝났는지 (브라우저 새로고침)</li></ol>`}
+  </section>
   <section class="card" id="evSettings"><div class="card-h"><h2>평가자 <span class="pill">${p4evals().length}명</span></h2><button class="btn pri" data-act="evadd" ${dis}>+ 평가자 추가</button></div>
     <p class="note">3번 상황 대응 워크숍과 4번 노하우 공유 평가표에 같이 쓰입니다. 이름을 바꾸면 두 평가표에 바로 반영됩니다.</p>
     <div class="evlist">${p4evals().map((e,i) => `<div class="evrow"><span class="n mono">${i+1}</span><input id="evn-${e.id}" data-bind="evname" data-id="${e.id}" value="${esc(e.name)}" aria-label="평가자 ${i+1} 이름" ${dis}>
@@ -1152,7 +1175,7 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('click', e => {
   const tb = e.target.closest('[data-tab]');
-  if (tb) { ui.tab = tb.dataset.tab; resetArm = false; saveUi(); render(); if (tb.dataset.goev) { const el = document.getElementById('evSettings'); el && el.scrollIntoView({block:'start'}); } return; }
+  if (tb) { ui.tab = tb.dataset.tab; resetArm = false; saveUi(); render(); if (tb.dataset.goev || tb.dataset.goconn) { const el = document.getElementById(tb.dataset.goconn ? 'connSettings' : 'evSettings'); el && el.scrollIntoView({block:'start'}); } return; }
   const gp = e.target.closest('[data-goprog]'); if (gp) { ui.tab = 'programs'; ui.prog = gp.dataset.goprog; saveUi(); render(); return; }
   const pc = e.target.closest('[data-prog]'); if (pc) { ui.prog = pc.dataset.prog; saveUi(); render(); return; }
   const p1 = e.target.closest('[data-p1]'); if (p1) { ui.p1view = p1.dataset.p1; saveUi(); render(); return; }
@@ -1181,6 +1204,8 @@ document.addEventListener('click', e => {
   else if (act === 'qaddb') { const pid = b.dataset.p, all = quizItems(pid), n = all.reduce((m,x) => { const k = /^qb(\d+)$/.exec(x.id); return k ? Math.max(m, +k[1]) : m; }, 0) + 1; saveItems(pid, [...all, { id:'qb'+n, q:'', a:'', pts:qcfg(pid).pts, bonus:true, used:false }]); toast(quizLabels(pid)['qb'+n] + '를 예비로 추가했습니다.'); }
   else if (act === 'qimport') { const pid = b.dataset.p, t = document.getElementById('qImport'); if (t) qImportText = t.value; if (!parseImport(qImportText)) { toast('먼저 엑셀 표를 붙여넣으세요.'); return; } if (!qImportArm) { qImportArm = true; render(); return; } qImportArm = false; applyImport(pid); }
   else if (act === 'qimportcancel') { qImportArm = false; render(); }
+  else if (act === 'reseed') { if (!reseedArm) { reseedArm = true; render(); return; } reseedArm = false; (async () => { try { const fs = window.__fs, clean = o => JSON.parse(JSON.stringify(o)), docs = seedDocs(); for (let k = 0; k < docs.length; k += 400) { const bt = fs.batch(); docs.slice(k, k+400).forEach(([p,o]) => bt.set(fs.doc(p), clean(o))); await bt.commit(); } toast('파일 데이터로 공유 저장소를 다시 채웠습니다.'); } catch(e) { toast('다시 올리지 못했습니다: ' + (e.code || e.message)); } })(); render(); }
+  else if (act === 'reseedcancel') { reseedArm = false; render(); }
   else if (act === 'qreset') { qResetArm = b.dataset.p; render(); }
   else if (act === 'qresetcancel') { qResetArm = null; render(); }
   else if (act === 'qresetgo') { const pid = b.dataset.p; if (qResetArm !== pid) return; qResetArm = null; TEAM_IDS.forEach(tid => { state[QZ[pid].mkey] = { ...marksOf(pid), [tid]: {} }; persist(QZ[pid].marks+'/'+tid, {}); }); QT.running = false; QT.left = null; render(); toast(pname(pid) + ' 정답 체크를 모두 초기화했습니다.'); }
@@ -1383,12 +1408,53 @@ document.addEventListener('fullscreenchange', () => { const b = document.querySe
 
 /* ---------- boot ---------- */
 render(); updCtrl(); requestAnimationFrame(loop);
+function seedDocs(){
+  const out = [], put = (p, o) => { if (o) out.push([p, o]); }, each = (col, obj) => Object.entries(obj || {}).forEach(([k,v]) => put(col+'/'+k, v));
+  put('meta/config', EMBED.config); each('teams', EMBED.teams); each('runs', EMBED.runs); each('scores', EMBED.scores);
+  each('p2marks', EMBED.marks); put('quiz/items', EMBED.quiz); each('p5marks', EMBED.marks5); put('quiz/p5', EMBED.quiz5);
+  put('p4/meta', EMBED.p4meta); each('p4teams', EMBED.p4teams); each('p4scores', EMBED.p4scores);
+  put('p3/meta', EMBED.p3meta); each('p3teams', EMBED.p3teams); each('p3scores', EMBED.p3scores);
+  return out;
+}
+async function connectFirebase(){
+  const C = window.FIREBASE_CONFIG;
+  if (!C) { connInfo = 'firebase-config.js 파일을 찾지 못했습니다. index.html과 같은 폴더에 올라가 있는지 확인하세요.'; return null; }
+  if (!C.apiKey || String(C.apiKey).startsWith('여기에') || !C.projectId) { connInfo = 'firebase-config.js에 Firebase 값(apiKey, projectId 등)이 아직 채워지지 않았습니다.'; return null; }
+  if (!window.firebase) { connInfo = 'Firebase 스크립트를 불러오지 못했습니다. 인터넷 연결 또는 회사 보안 프로그램의 차단 여부를 확인하세요.'; return null; }
+  firebase.initializeApp(C);
+  let authErr = null;
+  try { await firebase.auth().signInAnonymously(); } catch(e){ authErr = e; console.warn('anonymous sign-in failed', e); }
+  const fs = firebase.firestore();
+  let first;
+  try { first = await fs.doc('meta/config').get(); }
+  catch(e) {
+    const code = e && e.code || '';
+    connInfo = authErr ? `익명 로그인에 실패했습니다 (${authErr.code || authErr.message}). Firebase › Authentication › 로그인 방법에서 '익명'을 사용 설정하세요.`
+      : code === 'permission-denied' ? 'Firestore 규칙이 접근을 막고 있습니다. firestore.rules 내용을 규칙 탭에 게시했는지 확인하세요.'
+      : code === 'unavailable' || code === 'not-found' || /database/i.test(e.message || '') ? 'Firestore 데이터베이스를 찾지 못했습니다. Firebase › Firestore Database에서 데이터베이스를 만들었는지 확인하세요.'
+      : 'Firebase 연결 오류: ' + (code || e.message);
+    return null;
+  }
+  const clean = o => JSON.parse(JSON.stringify(o));
+  const api = {
+    doc: p => { const r = fs.doc(p); return { set: o => r.set(clean(o)), delete: () => r.delete(), onSnapshot: (n, e) => r.onSnapshot(n, e) }; },
+    collection: p => fs.collection(p),
+  };
+  window.__fs = fs;
+  if (!first.exists) {
+    const docs = seedDocs();
+    for (let k = 0; k < docs.length; k += 400) { const b = fs.batch(); docs.slice(k, k+400).forEach(([p,o]) => b.set(fs.doc(p), clean(o))); await b.commit(); }
+    toast('처음 연결: 현재 데이터를 공유 저장소에 올렸습니다.');
+  }
+  return api;
+}
 (async () => {
   try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch(e){ db = null; }
+  if (!db) { try { db = await connectFirebase(); } catch(e){ console.error(e); db = null; connInfo = connInfo || ('Firebase 연결 오류: ' + (e.code || e.message)); } if (!db && connInfo) toast('공유 저장소에 연결되지 않았습니다. 설정 › 공유 저장소 연결에서 원인을 확인하세요.'); }
   if (!db) { mode = 'local'; render(); return; }
   mode = 'live';
-  try { const user = await window.claude.use('user'); if (user && user.can) { const ok = await user.can('data.write'); if (ok === false) readOnly = true; } } catch(e){}
-  const onErr = e => { if (e && e.code === 'revoked') { mode = 'local'; render(); } };
+  try { if (window.claude && window.claude.use) { const user = await window.claude.use('user'); if (user && user.can) { const ok = await user.can('data.write'); if (ok === false) readOnly = true; } } } catch(e){}
+  const onErr = e => { console.error(e); if (e && (e.code === 'revoked' || e.code === 'permission-denied')) { mode = 'local'; render(); toast('공유 저장소 권한이 없어 이 브라우저에만 저장합니다.'); } };
   db.doc('meta/config').onSnapshot(s => { state.config = s.exists ? { ...s.data() } : {}; saveLocal(); render(); }, onErr);
   db.collection('teams').onSnapshot(s => { state.teams = Object.fromEntries(s.docs.map(d => [d.id, { ...d.data() }])); saveLocal(); render(); }, onErr);
   db.collection('runs').onSnapshot(s => { state.runs = Object.fromEntries(s.docs.map(d => [d.id, { ...d.data() }])); saveLocal(); render(); }, onErr);
@@ -1407,4 +1473,5 @@ render(); updCtrl(); requestAnimationFrame(loop);
 })();
 </script>
 
-</body></html>
+</body>
+</html>
